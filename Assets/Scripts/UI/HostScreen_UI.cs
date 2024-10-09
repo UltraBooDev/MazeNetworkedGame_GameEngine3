@@ -79,7 +79,5 @@ public class HostScreen_UI : MonoBehaviour
             }
         });
 
-        gameObject.SetActive(false);
-
     }
 }

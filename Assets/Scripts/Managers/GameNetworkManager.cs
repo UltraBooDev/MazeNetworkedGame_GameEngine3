@@ -13,21 +13,6 @@ public class GameNetworkManager : NetworkManager
         End
     }
 
-    public NetworkVariable<GameState> gamemodeState = new(
-        GameState.Lobby,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server);
-
-    public NetworkVariable<float> matchTimer = new(
-        90f,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server);
-
-    public NetworkVariable<bool> matchStarted = new(
-    false,
-    NetworkVariableReadPermission.Everyone,
-    NetworkVariableWritePermission.Server);
-
     public NetworkList<int> playersInfo; //gonna make this into a class/struct;
 
 
@@ -35,19 +20,19 @@ public class GameNetworkManager : NetworkManager
     {
         if (!IsServer) return;
 
-        switch (gamemodeState.Value)
+        switch (PrefabRefManager.Instance.serverVars.gamemodeState.Value)
         {
             case GameState.Lobby:
-                if (matchTimer.Value != 90f) matchTimer.Value = 90f;
-                if (matchStarted.Value) matchStarted.Value = false;
+                if (PrefabRefManager.Instance.serverVars.matchTimer.Value != 90f) PrefabRefManager.Instance.serverVars.matchTimer.Value = 90f;
+                if (PrefabRefManager.Instance.serverVars.matchStarted.Value) PrefabRefManager.Instance.serverVars.matchStarted.Value = false;
                 break;
 
             case GameState.InGame:
 
-                if(matchStarted.Value)
+                if(PrefabRefManager.Instance.serverVars.matchStarted.Value)
                 {
-                    matchTimer.Value -= Time.deltaTime;
-                    if (matchTimer.Value < 0) matchTimer.Value = 0f;
+                    PrefabRefManager.Instance.serverVars.matchTimer.Value -= Time.deltaTime;
+                    if (PrefabRefManager.Instance.serverVars.matchTimer.Value < 0) PrefabRefManager.Instance.serverVars.matchTimer.Value = 0f;
                 }
 
                 break;
@@ -62,7 +47,11 @@ public class GameNetworkManager : NetworkManager
     {
         if (rpcParams.Receive.SenderClientId != LocalClientId) return false;
 
-        //gamemodeState.Value = GameState.InGame;
+        Debug.Log("Trying Bool");
+        PrefabRefManager.Instance.serverVars.matchStarted.Value = true;
+        Debug.Log("Done Bool");
+        PrefabRefManager.Instance.serverVars.gamemodeState.Value = GameState.InGame;
+        Debug.Log("Done Enum");
 
         bool isBlueTeam = false;
 

@@ -28,5 +28,7 @@ public class PlayerNetworkController : NetworkBehaviour
             pawnObject = pawn;
         }
 
+        MainMenu_UI.Instance.StartGameHUD();
+
     }
 }
