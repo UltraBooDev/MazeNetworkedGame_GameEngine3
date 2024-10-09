@@ -5,7 +5,7 @@ using Unity.Netcode;
 public class MainMenu_UI : Singleton<MainMenu_UI>
 {
     [SerializeField] Button BTN_Host, BTN_Join;
-    [SerializeField] GameObject PNL_Lobby, PNL_WaitRoom, PNL_HostRoom;
+    [SerializeField] GameObject PNL_Lobby, PNL_WaitRoom, PNL_HostRoom, PNL_GameUI;
 
     void Start()
     {
@@ -22,7 +22,7 @@ public class MainMenu_UI : Singleton<MainMenu_UI>
         }
         else
         {
-
+            StartClient();
         }
     }
 
@@ -33,5 +33,12 @@ public class MainMenu_UI : Singleton<MainMenu_UI>
             PNL_Lobby.SetActive(false);
             PNL_WaitRoom.SetActive(true);
         }
+    }
+
+    public void StartGameHUD()
+    {
+        PNL_WaitRoom.SetActive(false);
+        PNL_GameUI.SetActive(true);
+        gameObject.SetActive(false);
     }
 }
