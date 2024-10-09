@@ -2,7 +2,7 @@ using UnityEngine.UI;
 using UnityEngine;
 using Unity.Netcode;
 
-public class MainMenu_UI : MonoBehaviour
+public class MainMenu_UI : Singleton<MainMenu_UI>
 {
     [SerializeField] Button BTN_Host, BTN_Join;
     [SerializeField] GameObject PNL_Lobby, PNL_WaitRoom, PNL_HostRoom;

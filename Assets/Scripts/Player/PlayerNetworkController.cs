@@ -11,10 +11,22 @@ public class PlayerNetworkController : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Owner);
 
+    public PawnNetworkController pawnObject;
+
 
 
     private void Update()
     {
         if (!IsOwner) return;
+    }
+
+    [ClientRpc]
+    public void SetUpPawn_ClientRpc(NetworkBehaviourReference pawnRef, ClientRpcParams clientRpcParams)
+    {
+        if(pawnRef.TryGet(out PawnNetworkController pawn))
+        {
+            pawnObject = pawn;
+        }
+
     }
 }

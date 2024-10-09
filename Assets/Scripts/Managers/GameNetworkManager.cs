@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using System.Linq;
 
 public class GameNetworkManager : NetworkManager
 {
+    [SerializeField]
     public enum GameState
     {
         Lobby,
@@ -56,15 +58,56 @@ public class GameNetworkManager : NetworkManager
     }
 
     [ServerRpc]
-    public void CreatePlayers_ServerRpc()
+    public bool CreatePlayers_ServerRpc(ServerRpcParams rpcParams)
     {
-        for (int i = 0; i < ConnectedClientsList.Count + 1; i++)
-        {
-            GameObject g = Instantiate(PrefabRefManager.Instance.playerPawn);
-            NetworkObject no = g.GetComponent<NetworkObject>();
-            no.SpawnWithOwnership(ConnectedClientsIds[i]);
+        if (rpcParams.Receive.SenderClientId != LocalClientId) return false;
 
+        //gamemodeState.Value = GameState.InGame;
+
+        bool isBlueTeam = false;
+
+        Dictionary<ulong, NetworkClient> clients =  new Dictionary<ulong, NetworkClient>(ConnectedClients);
+        List<Transform> spawnPos_TeamRed = new List<Transform>(PrefabRefManager.Instance.spawnPos_TeamRed);
+        List<Transform> spawnPos_TeamBlue = new List<Transform>(PrefabRefManager.Instance.spawnPos_TeamBlue);
+
+        clients.OrderBy(x => Random.value);
+
+        foreach (KeyValuePair<ulong, NetworkClient> kvp in clients)
+        {
+            int i = Random.Range(0, !isBlueTeam ? spawnPos_TeamRed.Count - 1 : spawnPos_TeamBlue.Count - 1);
+
+            GameObject g = Instantiate(PrefabRefManager.Instance.playerPawn, !isBlueTeam ? spawnPos_TeamRed[i]: spawnPos_TeamBlue[i]);
+            NetworkObject no = g.GetComponent<NetworkObject>();
+            no.SpawnWithOwnership(kvp.Key);
+
+            if (!isBlueTeam) spawnPos_TeamRed.RemoveAt(i);
+            else spawnPos_TeamBlue.RemoveAt(i);
+
+            PlayerNetworkController[] playControls = FindObjectsOfType<PlayerNetworkController>();
+
+            foreach(PlayerNetworkController ply in playControls)
+            {
+                if(ply.OwnerClientId == kvp.Key)
+                {
+                    var infoToSend = g.GetComponent<PawnNetworkController>();
+
+                    ply.SetUpPawn_ClientRpc(infoToSend, new ClientRpcParams()
+                    {
+                        Send = new ClientRpcSendParams()
+                        {
+                            TargetClientIds = new ulong[] {kvp.Key}
+                        }
+                    });
+
+                    break;
+                }
+            }
+
+            isBlueTeam = !isBlueTeam;
         }
+
+        return true;
+
     }
 
 }

@@ -16,8 +16,22 @@ public class HostScreen_UI : MonoBehaviour
     {
         if (!NetworkManager.Singleton.IsHost) return;
 
+        hasStarted = false; // double just to make sure
+        BTNStart.onClick.AddListener(StartGame);
+
         StopAllCoroutines();
         StartCoroutine(CheckForPlayers());
+    }
+
+    private void OnDisable()
+    {
+        BTNStart.onClick.RemoveListener(StartGame);
+        hasStarted = false;
+    }
+
+    void StartGame()
+    {
+        hasStarted = true;
     }
 
     IEnumerator CheckForPlayers()
@@ -57,7 +71,15 @@ public class HostScreen_UI : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
-        NetworkManager.Singleton.gameObject.GetComponent<GameNetworkManager>().CreatePlayers_ServerRpc();
+        NetworkManager.Singleton.gameObject.GetComponent<GameNetworkManager>().CreatePlayers_ServerRpc(new ServerRpcParams()
+        {
+            Receive = new ServerRpcReceiveParams()
+            {
+                SenderClientId = NetworkManager.Singleton.LocalClientId
+            }
+        });
+
+        gameObject.SetActive(false);
 
     }
 }
