@@ -14,7 +14,8 @@ public class PawnNetworkController : NetworkBehaviour
     [Header("Shoot Settings")]
     [SerializeField] GameObject bulletPrefab;
     [SerializeField] Transform bulletSpawnPoint;
-    [SerializeField] float fireRate = 0.1f;
+    [SerializeField] float fireRate = 0.5f;
+    float fireRateTimer = 0f;
     [Space(10)]
     Vector2 moveDir, mouseDir;
 
@@ -58,10 +59,10 @@ public class PawnNetworkController : NetworkBehaviour
         //if (!IsOwner) return;
         if (!isAlive) return;
 
-        if (value.isPressed && Time.time > fireRate)
+        if (value.isPressed && Time.time > fireRateTimer)
         {
             Fire();
-            fireRate = Time.time + fireRate;
+            fireRateTimer = Time.time + fireRate;
             Debug.Log("Fire" + fireRate + " " + Time.time);
         }
     }
@@ -92,7 +93,7 @@ public class PawnNetworkController : NetworkBehaviour
                 Vector3 lookDir = Vector3.right * mouseDir.x + Vector3.forward * mouseDir.y;
                 if (lookDir.sqrMagnitude > 0f)
                 {
-                    Quaternion newRot = Quaternion.Euler(Quaternion.LookRotation(lookDir, Vector3.up).eulerAngles + new Vector3(0, -90, 0));
+                    Quaternion newRot = Quaternion.Euler(Quaternion.LookRotation(lookDir, Vector3.up).eulerAngles + new Vector3(0, 180, 0));
                     gunPivot.transform.rotation = Quaternion.RotateTowards(gunPivot.transform.rotation, newRot, Time.deltaTime * 1000);
                 }
             }
