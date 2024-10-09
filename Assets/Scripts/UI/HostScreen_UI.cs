@@ -56,6 +56,8 @@ public class HostScreen_UI : MonoBehaviour
 
             yield return new WaitForEndOfFrame();
         }
-        
+
+        NetworkManager.Singleton.gameObject.GetComponent<GameNetworkManager>().CreatePlayers_ServerRpc();
+
     }
 }

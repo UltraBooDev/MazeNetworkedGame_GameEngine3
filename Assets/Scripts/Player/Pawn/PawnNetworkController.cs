@@ -20,7 +20,7 @@ public class PawnNetworkController : NetworkBehaviour
 
     private void Update()
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
 
         MovePlayer();
         LookAtAngle();
@@ -30,7 +30,7 @@ public class PawnNetworkController : NetworkBehaviour
 
     void OnLook(InputValue value)
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
         if (!isAlive) return;
 
         mouseDir = value.Get<Vector2>();
@@ -38,7 +38,7 @@ public class PawnNetworkController : NetworkBehaviour
 
     void OnMove(InputValue value)
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
         if (!isAlive) return;
 
         moveDir = value.Get<Vector2>() * -1;
@@ -46,7 +46,7 @@ public class PawnNetworkController : NetworkBehaviour
 
     void OnDeviceChange(PlayerInput p)
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
         isUsingController = p.currentControlScheme.Equals("Gamepad") ? true : false;
     }
 

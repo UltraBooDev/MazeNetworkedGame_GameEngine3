@@ -1130,6 +1130,7 @@ GameObject:
   - component: {fileID: 201716229}
   - component: {fileID: 201716228}
   - component: {fileID: 201716227}
+  - component: {fileID: 201716230}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1207,6 +1208,8 @@ MonoBehaviour:
     m_InternalValue: 0
   matchTimer:
     m_InternalValue: 90
+  matchStarted:
+    m_InternalValue: 0
 --- !u!4 &201716229
 Transform:
   m_ObjectHideFlags: 0
@@ -1222,6 +1225,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &201716230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 201716226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab42d8e139dc5643938e22ede869880, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerPawn: {fileID: 1850688237881986116, guid: 0e0b3906c13f9fb45b5b921a66fe836b, type: 3}
 --- !u!1 &216627925
 GameObject:
   m_ObjectHideFlags: 0
@@ -3128,7 +3144,7 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   m_Layer: 0
-  m_Name: Main Camera
+  m_Name: MainCamera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
