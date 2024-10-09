@@ -5,6 +5,7 @@ using Unity.Netcode;
 public class MainMenu_UI : MonoBehaviour
 {
     [SerializeField] Button BTN_Host, BTN_Join;
+    [SerializeField] GameObject PNL_Lobby, PNL_WaitRoom, PNL_HostRoom;
 
     void Start()
     {
@@ -14,11 +15,23 @@ public class MainMenu_UI : MonoBehaviour
 
     private void StartHost()
     {
-        NetworkManager.Singleton.StartHost();
+        if(NetworkManager.Singleton.StartHost())
+        {
+            PNL_Lobby.SetActive(false);
+            PNL_HostRoom.SetActive(true);
+        }
+        else
+        {
+
+        }
     }
 
     private void StartClient()
     {
-        NetworkManager.Singleton.StartClient();
+        if(NetworkManager.Singleton.StartClient())
+        {
+            PNL_Lobby.SetActive(false);
+            PNL_WaitRoom.SetActive(true);
+        }
     }
 }
