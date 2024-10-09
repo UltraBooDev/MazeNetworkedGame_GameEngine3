@@ -16,6 +16,11 @@ public class GameNetworkManager : NetworkManager
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
+    public NetworkVariable<float> matchTimer = new(
+        90f,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
 
     private void Update()
     {
