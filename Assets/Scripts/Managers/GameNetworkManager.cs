@@ -32,12 +32,16 @@ public class GameNetworkManager : NetworkManager
                 if(PrefabRefManager.Instance.serverVars.matchStarted.Value)
                 {
                     PrefabRefManager.Instance.serverVars.matchTimer.Value -= Time.deltaTime;
-                    if (PrefabRefManager.Instance.serverVars.matchTimer.Value < 0) PrefabRefManager.Instance.serverVars.matchTimer.Value = 0f;
+                    if (PrefabRefManager.Instance.serverVars.matchTimer.Value <= 0)
+                    {
+                        PrefabRefManager.Instance.serverVars.gamemodeState.Value = GameState.End;
+                    }
                 }
 
                 break;
 
             case GameState.End:
+                PrefabRefManager.Instance.serverVars.matchTimer.Value = 0f;
                 break;
         }
     }
@@ -77,11 +81,22 @@ public class GameNetworkManager : NetworkManager
                 {
                     var infoToSend = g.GetComponent<PawnNetworkController>();
 
-                    ply.SetUpPawn_ClientRpc(infoToSend, new ClientRpcParams()
+                    ply.SetUpPawn_ClientRpc(infoToSend, !isBlueTeam ? 7 : 6, new ClientRpcParams()
                     {
                         Send = new ClientRpcSendParams()
                         {
                             TargetClientIds = new ulong[] {kvp.Key}
+                        }
+                    });
+
+                    List<ulong> otherClients = new List<ulong> (ConnectedClientsIds);
+                    otherClients.Remove(kvp.Key);
+
+                    ply.SetUpPawnOnDifferentClients_ClientRpc(infoToSend, !isBlueTeam ? 7 : 6, new ClientRpcParams()
+                    {
+                        Send = new ClientRpcSendParams()
+                        {
+                            TargetClientIds = otherClients
                         }
                     });
 
@@ -93,6 +108,15 @@ public class GameNetworkManager : NetworkManager
         }
 
         return true;
+
+    }
+
+    [ServerRpc]
+    public void GameEnd_Calculate_ServerRpc(ServerRpcParams rpcParams)
+    {
+        if (rpcParams.Receive.SenderClientId != LocalClientId) return;
+
+
 
     }
 
