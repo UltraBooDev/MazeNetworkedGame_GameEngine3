@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
-
+public enum PlayerTeam { Red, Blue }
 [RequireComponent(typeof(NetworkObject))]
 public class PawnNetworkController : NetworkBehaviour
 {
     [SerializeField] GameObject gunPivot;
-
+    public PlayerTeam team;
     bool isAlive = true;
     [SerializeField] float movementSpeed = 4f;
     [SerializeField] float gamepadDeadzone = 0.1f;
