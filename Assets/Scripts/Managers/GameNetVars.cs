@@ -19,5 +19,14 @@ public class GameNetVars : Singleton_Network<GameNetVars>
     NetworkVariableReadPermission.Everyone,
     NetworkVariableWritePermission.Server);
 
+    public NetworkVariable<int> redPoints = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner);
+    public NetworkVariable<int> bluePoints = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner);
+
     public Camera LobbyCam;
 }
