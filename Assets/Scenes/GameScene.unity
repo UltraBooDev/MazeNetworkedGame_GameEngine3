@@ -6100,6 +6100,7 @@ MonoBehaviour:
     m_InternalValue: 90
   matchStarted:
     m_InternalValue: 0
+  LobbyCam: {fileID: 963194227}
 --- !u!4 &1580005037
 Transform:
   m_ObjectHideFlags: 0

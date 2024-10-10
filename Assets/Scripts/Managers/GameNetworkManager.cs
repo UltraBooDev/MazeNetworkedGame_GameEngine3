@@ -47,11 +47,8 @@ public class GameNetworkManager : NetworkManager
     {
         if (rpcParams.Receive.SenderClientId != LocalClientId) return false;
 
-        Debug.Log("Trying Bool");
         PrefabRefManager.Instance.serverVars.matchStarted.Value = true;
-        Debug.Log("Done Bool");
         PrefabRefManager.Instance.serverVars.gamemodeState.Value = GameState.InGame;
-        Debug.Log("Done Enum");
 
         bool isBlueTeam = false;
 

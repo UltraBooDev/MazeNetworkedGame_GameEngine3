@@ -19,9 +19,17 @@ public class PawnNetworkController : NetworkBehaviour
     [Space(10)]
     Vector2 moveDir, mouseDir;
 
-    bool isUsingController = false;
+    [SerializeField] Camera myCam;
+    [SerializeField] Rigidbody myRB;
+
+    //bool isUsingController = false;
     [SerializeField] private string currentControlScheme;
     public PlayerInput playerInput;
+
+    public NetworkVariable<int> pointsOnPlayer = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner);
 
     private void Update()
     {
@@ -81,7 +89,8 @@ public class PawnNetworkController : NetworkBehaviour
 
     void MovePlayer()
     {
-        transform.Translate(new Vector3(moveDir.x, 0f, moveDir.y) * movementSpeed * Time.deltaTime, Space.World);
+        myRB.AddForce((new Vector3(moveDir.x, 0f, moveDir.y) * movementSpeed), ForceMode.Force);
+        //transform.Translate(new Vector3(moveDir.x, 0f, moveDir.y) * movementSpeed * Time.deltaTime, Space.World);
     }
 
     void LookAtAngle()
@@ -110,6 +119,12 @@ public class PawnNetworkController : NetworkBehaviour
                 gunPivot.transform.LookAt(new Vector3(point.x, gunPivot.transform.position.y, point.z));
             }
         }
+    }
+
+    public void ToggleCam(bool turnOn)
+    {
+        GameNetVars.Instance.LobbyCam.gameObject.SetActive(!turnOn);
+        myCam.gameObject.SetActive(turnOn);
     }
 
     void Fire()

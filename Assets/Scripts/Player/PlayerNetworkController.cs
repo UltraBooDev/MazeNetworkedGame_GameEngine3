@@ -28,6 +28,7 @@ public class PlayerNetworkController : NetworkBehaviour
             pawnObject = pawn;
         }
 
+        pawn.ToggleCam(true);
         MainMenu_UI.Instance.StartGameHUD();
 
     }

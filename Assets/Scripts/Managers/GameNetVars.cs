@@ -18,4 +18,6 @@ public class GameNetVars : Singleton_Network<GameNetVars>
     false,
     NetworkVariableReadPermission.Everyone,
     NetworkVariableWritePermission.Server);
+
+    public Camera LobbyCam;
 }
