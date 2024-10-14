@@ -7,21 +7,25 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(NetworkObject))]
 public class PawnNetworkController : NetworkBehaviour
 {
-    [SerializeField] GameObject gunPivot;
-    [SerializeField] GameObject modelObj;
+    public GameObject gunPivot;
+    public GameObject modelObj;
     [HideInInspector] public bool isAlive = true;
     [SerializeField] float movementSpeed = 4f;
     [SerializeField] float gamepadDeadzone = 0.1f;
     [Header("Shoot Settings")]
-    [SerializeField] GameObject bulletPrefab;
-    [SerializeField] Transform bulletSpawnPoint;
+    public GameObject bulletPrefab;
+    public Transform bulletSpawnPoint;
     [SerializeField] float fireRate = 0.5f;
     float fireRateTimer = 0f;
     [Space(10)]
     Vector2 moveDir, mouseDir;
 
+    public MeshRenderer bodyMat, backpackMat;
+
     [SerializeField] Camera myCam;
     [SerializeField] Rigidbody myRB;
+
+    bool isFirePressed = false;
 
     [HideInInspector]public PlayerNetworkController controller;
 
@@ -32,22 +36,38 @@ public class PawnNetworkController : NetworkBehaviour
     public NetworkVariable<int> pointsOnPlayer = new(
         0,
         NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner);
+        NetworkVariableWritePermission.Server);
 
     private void Update()
     {
         if (!IsOwner) return;
+        if (!GameNetVars.Instance.matchStarted.Value) return;
 
-        MovePlayer();
+        Gameplay_UI.Instance.PlayerHoldAmount.text = $"You are holding {pointsOnPlayer.Value} points";
+
+        if (!isAlive) return;
+
         LookAtAngle();
+
+        if(isFirePressed && Time.time > fireRateTimer)
+        {
+            Fire();
+            fireRateTimer = Time.time + fireRate;
+        }
 
         if (playerInput.currentControlScheme != currentControlScheme)
         {
             OnControlSchemeChanged();
             currentControlScheme = playerInput.currentControlScheme;
         }
+    }
 
-        Gameplay_UI.Instance.PlayerHoldAmount.text = $"You are holding {pointsOnPlayer.Value} points";
+    private void FixedUpdate()
+    {
+        if (!IsOwner) return;
+        if (!isAlive) return;
+
+        MovePlayer();
     }
 
 
@@ -72,11 +92,7 @@ public class PawnNetworkController : NetworkBehaviour
         if (!IsOwner) return;
         if (!isAlive) return;
 
-        if (value.isPressed && Time.time > fireRateTimer)
-        {
-            Fire();
-            fireRateTimer = Time.time + fireRate;
-        }
+        isFirePressed = value.isPressed;
     }
 
     public void OnControlSchemeChanged()
@@ -133,9 +149,26 @@ public class PawnNetworkController : NetworkBehaviour
 
     void Fire()
     {
-        NetworkObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, gunPivot.transform.rotation).GetComponent<NetworkObject>();
-        bullet.GetComponent<NetworkBullet>().bulletOwner = OwnerClientId;
-        bullet.Spawn();
+        SpawnBullet_ServerRpc(new ServerRpcParams()
+        {
+            Receive = new ServerRpcReceiveParams()
+            {
+                SenderClientId = OwnerClientId
+            }
+        });
+    }
+
+    [ServerRpc]
+    public void SpawnBullet_ServerRpc(ServerRpcParams rpcParams)
+    {
+        Debug.Log("Trying to Spawn");
+
+        GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, gunPivot.transform.rotation);
+        bullet.GetComponent<NetworkBullet>().bulletOwner = rpcParams.Receive.SenderClientId;
+        bullet.GetComponent<NetworkObject>().SpawnAsPlayerObject(rpcParams.Receive.SenderClientId, true);
+
+
+        Debug.Log($"Spawned from {rpcParams.Receive.SenderClientId}");
     }
 
     [ClientRpc]
@@ -146,13 +179,52 @@ public class PawnNetworkController : NetworkBehaviour
 
         if(IsOwner)
         {
+            Gameplay_UI.Instance.RespawnPanel.SetActive(true);
             StartCoroutine(PlayerRespawnTimer());
         }
     }
 
+    [ClientRpc]
+    public void PlayerRevive_ClientRpc(ulong playerHit, ClientRpcParams clientRpcParams)
+    {
+        isAlive = true;
+        modelObj.SetActive(true);
+    }
+
     IEnumerator PlayerRespawnTimer()
     {
-        yield return new WaitForSeconds(6f);
+        int timer = 6;
+
+        while(timer > 0)
+        {
+            Gameplay_UI.Instance.RespawnTimer.text = $"Respawn in {timer}...";
+            yield return new WaitForSeconds(1f);
+            timer--;
+            yield return null;
+        }
+
+        Gameplay_UI.Instance.RespawnTimer.text = $"Respawn soon...";
+        yield return new WaitForSeconds(0.05f);
+        Gameplay_UI.Instance.RespawnPanel.SetActive(false);
+
+       RevivePlayer_ServerRpc(OwnerClientId, new ServerRpcParams());
+    }
+
+    [ServerRpc]
+    public void RevivePlayer_ServerRpc(ulong playerID, ServerRpcParams rpcParams)
+    {
+        if (controller.playerTeam.Value == 0) myRB.position = PrefabRefManager.Instance.spawnPos_TeamRed[Random.Range(0, PrefabRefManager.Instance.spawnPos_TeamRed.Count)].position;
+        else myRB.position = PrefabRefManager.Instance.spawnPos_TeamBlue[Random.Range(0, PrefabRefManager.Instance.spawnPos_TeamBlue.Count)].position;
+
+        pointsOnPlayer.Value = 0;
+
+        PlayerRevive_ClientRpc(playerID, new ClientRpcParams()
+        {
+            Send = new ClientRpcSendParams()
+            {
+                TargetClientIds = new List<ulong>(NetworkManager.Singleton.ConnectedClientsIds)
+            }
+        });
     }
 
 }

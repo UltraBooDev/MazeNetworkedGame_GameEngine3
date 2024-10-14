@@ -11,17 +11,15 @@ public class NetworkBullet : NetworkBehaviour
     private Rigidbody rb;
     [HideInInspector]public ulong bulletOwner;
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
-        if (!IsServer) return;
-
         rb = GetComponent<Rigidbody>();
-        StartCoroutine(DestroyBullet());
+        if(IsServer)StartCoroutine(DestroyBullet());
     }
 
     private void Update()
     {
-        if (!IsServer) return;
+        //if (!IsServer) return;
 
         rb.velocity = transform.forward * bulletSpeed;
     }
@@ -41,9 +39,11 @@ public class NetworkBullet : NetworkBehaviour
     {
         if (!IsServer) return;
 
+        Debug.Log($"{other.gameObject.tag}");
+
         if(other.gameObject.tag == "Player")
         {
-            PawnNetworkController player = other.gameObject.GetComponent<PawnNetworkController>();
+            PawnNetworkController player = other.gameObject.GetComponentInParent<PawnNetworkController>();
 
             if (player == null) return;
             if (player.OwnerClientId == bulletOwner) return;
@@ -56,12 +56,12 @@ public class NetworkBullet : NetworkBehaviour
                     TargetClientIds = new List<ulong>(NetworkManager.Singleton.ConnectedClientsIds)
                 }
             });
+            NetworkManager.Singleton.gameObject.GetComponent<GameNetworkManager>().KillPlayer_ServerRpc(player.OwnerClientId,new ServerRpcParams());
 
-        }
-        else
-        {
             KillBullet();
         }
+
+        if (other.gameObject.tag == "Ground") KillBullet();
 
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using System.Linq;
@@ -54,16 +55,37 @@ public class GameNetworkManager : NetworkManager
     }
 
     [ServerRpc]
-    public bool CreatePlayers_ServerRpc(ServerRpcParams rpcParams)
+    public void KillPlayer_ServerRpc(ulong playerID, ServerRpcParams rpcParams)
     {
-        if (rpcParams.Receive.SenderClientId != LocalClientId) return false;
+        PawnNetworkController[] playerPawns = FindObjectsOfType<PawnNetworkController>();
 
-        PrefabRefManager.Instance.serverVars.matchStarted.Value = true;
+        foreach (PawnNetworkController ply in playerPawns)
+        {
+            if(ply.OwnerClientId == playerID)
+            {
+                ply.isAlive = false;
+
+                ply.pointsOnPlayer.Value = 0;
+                break;
+            }
+        }
+    }
+
+    [ServerRpc]
+    public void CreatePlayers_ServerRpc(ServerRpcParams rpcParams)
+    {
+        //if (rpcParams.Receive.SenderClientId != LocalClientId) return false;
+
+        StartCoroutine(ServerStart());
+    }
+
+    IEnumerator ServerStart()
+    {
         PrefabRefManager.Instance.serverVars.gamemodeState.Value = GameState.InGame;
 
         bool isBlueTeam = false;
 
-        Dictionary<ulong, NetworkClient> clients =  new Dictionary<ulong, NetworkClient>(ConnectedClients);
+        Dictionary<ulong, NetworkClient> clients = new Dictionary<ulong, NetworkClient>(ConnectedClients);
         List<Transform> spawnPos_TeamRed = new List<Transform>(PrefabRefManager.Instance.spawnPos_TeamRed);
         List<Transform> spawnPos_TeamBlue = new List<Transform>(PrefabRefManager.Instance.spawnPos_TeamBlue);
 
@@ -71,20 +93,35 @@ public class GameNetworkManager : NetworkManager
 
         foreach (KeyValuePair<ulong, NetworkClient> kvp in clients)
         {
-            int i = Random.Range(0, !isBlueTeam ? spawnPos_TeamRed.Count - 1 : spawnPos_TeamBlue.Count - 1);
+            yield return new WaitForFixedUpdate();
 
-            GameObject g = Instantiate(PrefabRefManager.Instance.playerPawn, !isBlueTeam ? spawnPos_TeamRed[i]: spawnPos_TeamBlue[i]);
+            spawnPos_TeamRed.OrderBy(x => Random.value);
+            spawnPos_TeamBlue.OrderBy(x => Random.value);
+
+            int i = Random.Range(0, !isBlueTeam ? spawnPos_TeamRed.Count : spawnPos_TeamBlue.Count);
+
+            yield return new WaitForFixedUpdate();
+
+            GameObject g = Instantiate(PrefabRefManager.Instance.playerPawn, !isBlueTeam ? spawnPos_TeamRed[i] : spawnPos_TeamBlue[i]);
             NetworkObject no = g.GetComponent<NetworkObject>();
             no.SpawnWithOwnership(kvp.Key);
+
+            yield return new WaitForFixedUpdate();
+
+            no.GetComponent<Rigidbody>().position = !isBlueTeam ? spawnPos_TeamRed[i].position : spawnPos_TeamBlue[i].position;
 
             if (!isBlueTeam) spawnPos_TeamRed.RemoveAt(i);
             else spawnPos_TeamBlue.RemoveAt(i);
 
+            yield return new WaitForFixedUpdate();
+
             PlayerNetworkController[] playControls = FindObjectsOfType<PlayerNetworkController>();
 
-            foreach(PlayerNetworkController ply in playControls)
+            yield return new WaitForFixedUpdate();
+
+            foreach (PlayerNetworkController ply in playControls)
             {
-                if(ply.OwnerClientId == kvp.Key)
+                if (ply.OwnerClientId == kvp.Key)
                 {
                     var infoToSend = g.GetComponent<PawnNetworkController>();
 
@@ -92,11 +129,11 @@ public class GameNetworkManager : NetworkManager
                     {
                         Send = new ClientRpcSendParams()
                         {
-                            TargetClientIds = new ulong[] {kvp.Key}
+                            TargetClientIds = new ulong[] { kvp.Key }
                         }
                     });
 
-                    List<ulong> otherClients = new List<ulong> (ConnectedClientsIds);
+                    List<ulong> otherClients = new List<ulong>(ConnectedClientsIds);
                     otherClients.Remove(kvp.Key);
 
                     ply.SetUpPawnOnDifferentClients_ClientRpc(infoToSend, !isBlueTeam ? 7 : 6, new ClientRpcParams()
@@ -114,16 +151,13 @@ public class GameNetworkManager : NetworkManager
             isBlueTeam = !isBlueTeam;
         }
 
-        return true;
-
+        PrefabRefManager.Instance.serverVars.matchStarted.Value = true;
     }
 
     [ServerRpc]
     public void GameEnd_Calculate_ServerRpc(ServerRpcParams rpcParams)
     {
-        if (rpcParams.Receive.SenderClientId != LocalClientId) return;
-
-
+        //if (rpcParams.Receive.SenderClientId != LocalClientId) return;
 
     }
 

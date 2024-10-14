@@ -32,7 +32,13 @@ public class PlayerNetworkController : NetworkBehaviour
 
         pawn.ToggleCam(true);
 
-        playerTeam.Value = Team;
+        playerTeam.Value = Team == 7 ? 0 : 1;
+
+        pawn.backpackMat.sharedMaterial = new Material(pawn.backpackMat.sharedMaterial);
+        pawn.bodyMat.sharedMaterial = pawn.backpackMat.sharedMaterial;
+
+        if (Team == 7) pawn.backpackMat.sharedMaterial.SetColor("_Color", Color.red);
+        if (Team == 6) pawn.backpackMat.sharedMaterial.SetColor("_Color", Color.blue);
 
         SetLayerAllChildren(pawn.transform, Team);
 
@@ -47,6 +53,12 @@ public class PlayerNetworkController : NetworkBehaviour
             pawnObject = pawn;
             pawn.controller = this;
         }
+
+        pawn.backpackMat.sharedMaterial = new Material(pawn.backpackMat.sharedMaterial);
+        pawn.bodyMat.sharedMaterial = pawn.backpackMat.sharedMaterial;
+
+        if (Team == 7) pawn.backpackMat.sharedMaterial.SetColor("_Color", Color.red);
+        if (Team == 6) pawn.backpackMat.sharedMaterial.SetColor("_Color", Color.blue);
 
         SetLayerAllChildren(pawn.transform, Team);
 
