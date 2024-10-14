@@ -197,7 +197,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gunPivot: {fileID: 8343032267791420544}
-  team: 0
+  modelObj: {fileID: 8343032267791420544}
+  isAlive: 1
   movementSpeed: 10
   gamepadDeadzone: 0.1
   bulletPrefab: {fileID: 1536195125426799771, guid: 6b73db1e5ff0ed2438b214bee792b32b, type: 3}
@@ -205,6 +206,7 @@ MonoBehaviour:
   fireRate: 0.1
   myCam: {fileID: 8087496157122073165}
   myRB: {fileID: 1519498534366928402}
+  controller: {fileID: 0}
   currentControlScheme: Keyboard&Mouse
   playerInput: {fileID: 4322302085016042803}
   pointsOnPlayer:

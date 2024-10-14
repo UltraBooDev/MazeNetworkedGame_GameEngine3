@@ -1,14 +1,15 @@
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
-public enum PlayerTeam { Red, Blue }
+
 [RequireComponent(typeof(NetworkObject))]
 public class PawnNetworkController : NetworkBehaviour
 {
     [SerializeField] GameObject gunPivot;
-    public PlayerTeam team;
-    bool isAlive = true;
+    [SerializeField] GameObject modelObj;
+    [HideInInspector] public bool isAlive = true;
     [SerializeField] float movementSpeed = 4f;
     [SerializeField] float gamepadDeadzone = 0.1f;
     [Header("Shoot Settings")]
@@ -22,6 +23,8 @@ public class PawnNetworkController : NetworkBehaviour
     [SerializeField] Camera myCam;
     [SerializeField] Rigidbody myRB;
 
+    [HideInInspector]public PlayerNetworkController controller;
+
     //bool isUsingController = false;
     [SerializeField] private string currentControlScheme;
     public PlayerInput playerInput;
@@ -33,7 +36,7 @@ public class PawnNetworkController : NetworkBehaviour
 
     private void Update()
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
 
         MovePlayer();
         LookAtAngle();
@@ -43,12 +46,14 @@ public class PawnNetworkController : NetworkBehaviour
             OnControlSchemeChanged();
             currentControlScheme = playerInput.currentControlScheme;
         }
+
+        Gameplay_UI.Instance.PlayerHoldAmount.text = $"You are holding {pointsOnPlayer.Value} points";
     }
 
 
     void OnLook(InputValue value)
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
         if (!isAlive) return;
 
         mouseDir = value.Get<Vector2>();
@@ -56,7 +61,7 @@ public class PawnNetworkController : NetworkBehaviour
 
     void OnMove(InputValue value)
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
         if (!isAlive) return;
 
         moveDir = value.Get<Vector2>() * -1;
@@ -64,14 +69,13 @@ public class PawnNetworkController : NetworkBehaviour
 
     void OnFire(InputValue value)
     {
-        //if (!IsOwner) return;
+        if (!IsOwner) return;
         if (!isAlive) return;
 
         if (value.isPressed && Time.time > fireRateTimer)
         {
             Fire();
             fireRateTimer = Time.time + fireRate;
-            Debug.Log("Fire" + fireRate + " " + Time.time);
         }
     }
 
@@ -130,7 +134,25 @@ public class PawnNetworkController : NetworkBehaviour
     void Fire()
     {
         NetworkObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, gunPivot.transform.rotation).GetComponent<NetworkObject>();
+        bullet.GetComponent<NetworkBullet>().bulletOwner = OwnerClientId;
         bullet.Spawn();
+    }
+
+    [ClientRpc]
+    public void PlayerKill_ClientRpc(ulong playerHit, ClientRpcParams clientRpcParams)
+    {
+        isAlive = false;
+        modelObj.SetActive(false);
+
+        if(IsOwner)
+        {
+            StartCoroutine(PlayerRespawnTimer());
+        }
+    }
+
+    IEnumerator PlayerRespawnTimer()
+    {
+        yield return new WaitForSeconds(6f);
     }
 
 }

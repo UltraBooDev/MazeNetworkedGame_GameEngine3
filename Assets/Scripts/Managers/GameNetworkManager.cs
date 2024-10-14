@@ -35,6 +35,13 @@ public class GameNetworkManager : NetworkManager
                     if (PrefabRefManager.Instance.serverVars.matchTimer.Value <= 0)
                     {
                         PrefabRefManager.Instance.serverVars.gamemodeState.Value = GameState.End;
+                        GameEnd_Calculate_ServerRpc(new ServerRpcParams()
+                        {
+                            Receive = new ServerRpcReceiveParams()
+                            {
+                                SenderClientId = LocalClientId
+                            }
+                        });
                     }
                 }
 

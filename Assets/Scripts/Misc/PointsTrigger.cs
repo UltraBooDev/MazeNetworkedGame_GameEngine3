@@ -2,74 +2,62 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using System.Linq;
 
-public enum PointType
-{
-    Extract,
-    Deposit
-}
 public class PointsTrigger : NetworkBehaviour
 {
-    public PointType pointType;
-    public int pointValue = 1;
-    [SerializeField] float extractionTime = 1f;
+    [SerializeField] protected int pointValue = 1;
+    [SerializeField] protected float extractionTime = 1.5f;
 
-    private bool extracting = false;
+    protected float pointTimer = 0f;
+
+    protected List<PawnNetworkController> inTrigger = new List<PawnNetworkController>();
+
+    protected virtual void Update()
+    {
+        if (!IsServer) return;
+
+        if (GameNetVars.Instance.gamemodeState.Value != GameNetworkManager.GameState.InGame) return;
+
+        if (inTrigger.Count <= 0) return;
+
+        if (pointTimer >= extractionTime)
+        {
+            foreach (PawnNetworkController target in inTrigger)
+            {
+                if (!target.isAlive) continue;
+
+                target.pointsOnPlayer.Value += pointValue;
+            }
+
+            pointTimer = 0f;
+            return;
+        }
+
+        pointTimer += Time.deltaTime;
+    }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (IsServer)
-        {
-            print(other.name);
-            PawnNetworkController player = other.gameObject.GetComponentInParent<PawnNetworkController>();
-            if (pointType == PointType.Extract)
-            {
-                if (player == null)
-                {
-                    Debug.Log("Player is null");
-                    return;
-                }
-                ulong clientId = player.OwnerClientId;
-                OnTriggerClientRpc(clientId, new ClientRpcParams()
-                {
-                    Send = new ClientRpcSendParams()
-                    {
-                        TargetClientIds = new List<ulong>() { clientId }
-                    }
-                });
-                extracting = true;
-                StartCoroutine(AddPointsToPlayer(player.GetComponent<PawnNetworkController>()));
-            }
-            else if (pointType == PointType.Deposit)
-            {
-                GetComponent<PointsBank>().AllocatePoints(player.pointsOnPlayer.Value, player.team);
-            }
-        }
+        if (!IsServer) return;
+
+        PawnNetworkController player = other.gameObject.GetComponent<PawnNetworkController>();
+
+        if (player == null) return;
+        if (inTrigger.Find(x => x.OwnerClientId == player.OwnerClientId)) return;
+
+        inTrigger.Add(player);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (pointType == PointType.Extract)
-        {
-            extracting = false;
-        }
-    }
+        if (!IsServer) return;
 
-    private IEnumerator AddPointsToPlayer(PawnNetworkController player)
-    {
-        while (extracting)
-        {
-            yield return new WaitForSeconds(extractionTime);
-            if (player != null)
-            {
-                player.pointsOnPlayer.Value += pointValue;
-            }
-        }
-    }
+        PawnNetworkController player = other.gameObject.GetComponent<PawnNetworkController>();
 
-    [ClientRpc]
-    private void OnTriggerClientRpc(ulong clientId, ClientRpcParams rpcParams)
-    {
-        print($"Client {clientId}: points awarded");
+        if (player == null) return;
+        if (!inTrigger.Find(x => x.OwnerClientId == player.OwnerClientId)) return;
+
+        inTrigger.Remove(inTrigger.Find(x => x.OwnerClientId == player.OwnerClientId));
     }
 }

@@ -27,6 +27,7 @@ public class PlayerNetworkController : NetworkBehaviour
         if(pawnRef.TryGet(out PawnNetworkController pawn))
         {
             pawnObject = pawn;
+            pawn.controller = this;
         }
 
         pawn.ToggleCam(true);
@@ -36,7 +37,6 @@ public class PlayerNetworkController : NetworkBehaviour
         SetLayerAllChildren(pawn.transform, Team);
 
         MainMenu_UI.Instance.StartGameHUD();
-
     }
 
     [ClientRpc]
@@ -45,6 +45,7 @@ public class PlayerNetworkController : NetworkBehaviour
         if (pawnRef.TryGet(out PawnNetworkController pawn))
         {
             pawnObject = pawn;
+            pawn.controller = this;
         }
 
         SetLayerAllChildren(pawn.transform, Team);
