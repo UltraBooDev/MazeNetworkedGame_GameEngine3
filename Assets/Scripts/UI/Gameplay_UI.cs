@@ -10,6 +10,7 @@ public class Gameplay_UI : Singleton<Gameplay_UI>
     public TMP_Text PlayerHoldAmount;
     public TMP_Text RespawnTimer;
     public GameObject RespawnPanel;
+    public GameObject GameEndPanel, BlueWins, RedWins, TieWins;
 
     // Update is called once per frame
     void Update()

@@ -1,11 +1,12 @@
 using UnityEngine.UI;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 public class MainMenu_UI : Singleton<MainMenu_UI>
 {
     [SerializeField] Button BTN_Host, BTN_Join;
-    [SerializeField] GameObject PNL_Lobby, PNL_WaitRoom, PNL_HostRoom, PNL_GameUI;
+    public GameObject PNL_Lobby, PNL_WaitRoom, PNL_HostRoom, PNL_GameUI;
 
     void Start()
     {
@@ -40,5 +41,10 @@ public class MainMenu_UI : Singleton<MainMenu_UI>
         PNL_WaitRoom.SetActive(false);
         PNL_GameUI.SetActive(true);
         gameObject.SetActive(false);
+    }
+
+    public void RestartScene()
+    {
+        SceneManager.LoadScene("GameScene", LoadSceneMode.Single);
     }
 }

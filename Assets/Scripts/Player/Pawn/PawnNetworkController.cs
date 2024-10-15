@@ -161,10 +161,9 @@ public class PawnNetworkController : NetworkBehaviour
     [ServerRpc]
     public void SpawnBullet_ServerRpc(ServerRpcParams rpcParams)
     {
-        Debug.Log("Trying to Spawn");
-
         GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, gunPivot.transform.rotation);
         bullet.GetComponent<NetworkBullet>().bulletOwner = rpcParams.Receive.SenderClientId;
+        bullet.GetComponent<NetworkBullet>().teamOwner = controller.playerTeam.Value;
         bullet.GetComponent<NetworkObject>().SpawnAsPlayerObject(rpcParams.Receive.SenderClientId, true);
 
 
@@ -189,6 +188,13 @@ public class PawnNetworkController : NetworkBehaviour
     {
         isAlive = true;
         modelObj.SetActive(true);
+
+        if(IsOwner)
+        {
+            if (controller.playerTeam.Value == 0) myRB.position = PrefabRefManager.Instance.spawnPos_TeamRed[Random.Range(0, PrefabRefManager.Instance.spawnPos_TeamRed.Count)].position;
+            else myRB.position = PrefabRefManager.Instance.spawnPos_TeamBlue[Random.Range(0, PrefabRefManager.Instance.spawnPos_TeamBlue.Count)].position;
+        }
+
     }
 
     IEnumerator PlayerRespawnTimer()
@@ -207,15 +213,12 @@ public class PawnNetworkController : NetworkBehaviour
         yield return new WaitForSeconds(0.05f);
         Gameplay_UI.Instance.RespawnPanel.SetActive(false);
 
-       RevivePlayer_ServerRpc(OwnerClientId, new ServerRpcParams());
+        RevivePlayer_ServerRpc(OwnerClientId, new ServerRpcParams());
     }
 
     [ServerRpc]
     public void RevivePlayer_ServerRpc(ulong playerID, ServerRpcParams rpcParams)
     {
-        if (controller.playerTeam.Value == 0) myRB.position = PrefabRefManager.Instance.spawnPos_TeamRed[Random.Range(0, PrefabRefManager.Instance.spawnPos_TeamRed.Count)].position;
-        else myRB.position = PrefabRefManager.Instance.spawnPos_TeamBlue[Random.Range(0, PrefabRefManager.Instance.spawnPos_TeamBlue.Count)].position;
-
         pointsOnPlayer.Value = 0;
 
         PlayerRevive_ClientRpc(playerID, new ClientRpcParams()

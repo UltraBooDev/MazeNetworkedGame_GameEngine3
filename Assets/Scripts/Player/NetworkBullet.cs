@@ -10,6 +10,8 @@ public class NetworkBullet : NetworkBehaviour
 
     private Rigidbody rb;
     [HideInInspector]public ulong bulletOwner;
+    //0 is Red, 1 is blue
+    [HideInInspector] public int teamOwner;
 
     public override void OnNetworkSpawn()
     {
@@ -47,6 +49,7 @@ public class NetworkBullet : NetworkBehaviour
 
             if (player == null) return;
             if (player.OwnerClientId == bulletOwner) return;
+            if (player.controller.playerTeam.Value == teamOwner) return;
             if (!player.isAlive) return;
 
             player.PlayerKill_ClientRpc(player.OwnerClientId, new ClientRpcParams()

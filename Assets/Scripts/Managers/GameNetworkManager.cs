@@ -26,6 +26,8 @@ public class GameNetworkManager : NetworkManager
             case GameState.Lobby:
                 if (PrefabRefManager.Instance.serverVars.matchTimer.Value != 90f) PrefabRefManager.Instance.serverVars.matchTimer.Value = 90f;
                 if (PrefabRefManager.Instance.serverVars.matchStarted.Value) PrefabRefManager.Instance.serverVars.matchStarted.Value = false;
+                PrefabRefManager.Instance.serverVars.redPoints.Value = 0;
+                PrefabRefManager.Instance.serverVars.bluePoints.Value = 0;
                 break;
 
             case GameState.InGame:
@@ -35,14 +37,20 @@ public class GameNetworkManager : NetworkManager
                     PrefabRefManager.Instance.serverVars.matchTimer.Value -= Time.deltaTime;
                     if (PrefabRefManager.Instance.serverVars.matchTimer.Value <= 0)
                     {
-                        PrefabRefManager.Instance.serverVars.gamemodeState.Value = GameState.End;
-                        GameEnd_Calculate_ServerRpc(new ServerRpcParams()
+                        PawnNetworkController[] playerPawns = FindObjectsOfType<PawnNetworkController>();
+
+                        foreach (PawnNetworkController ply in playerPawns)
                         {
-                            Receive = new ServerRpcReceiveParams()
+                            ply.controller.EndServerOnClients_ClientRpc(new ClientRpcParams()
                             {
-                                SenderClientId = LocalClientId
-                            }
-                        });
+                                Send = new ClientRpcSendParams()
+                                {
+                                    TargetClientIds = new List<ulong>(ConnectedClientsIds)
+                                }
+                            });
+                        }
+
+                        PrefabRefManager.Instance.serverVars.gamemodeState.Value = GameState.End;
                     }
                 }
 
@@ -104,20 +112,17 @@ public class GameNetworkManager : NetworkManager
 
             GameObject g = Instantiate(PrefabRefManager.Instance.playerPawn, !isBlueTeam ? spawnPos_TeamRed[i] : spawnPos_TeamBlue[i]);
             NetworkObject no = g.GetComponent<NetworkObject>();
-            no.SpawnWithOwnership(kvp.Key);
+            no.SpawnWithOwnership(kvp.Key, true);
 
             yield return new WaitForFixedUpdate();
 
-            no.GetComponent<Rigidbody>().position = !isBlueTeam ? spawnPos_TeamRed[i].position : spawnPos_TeamBlue[i].position;
-
-            if (!isBlueTeam) spawnPos_TeamRed.RemoveAt(i);
-            else spawnPos_TeamBlue.RemoveAt(i);
+            //no.GetComponent<Rigidbody>().position = !isBlueTeam ? spawnPos_TeamRed[i].position : spawnPos_TeamBlue[i].position;
 
             yield return new WaitForFixedUpdate();
 
             PlayerNetworkController[] playControls = FindObjectsOfType<PlayerNetworkController>();
 
-            yield return new WaitForFixedUpdate();
+            yield return new WaitForSeconds(0.05f);
 
             foreach (PlayerNetworkController ply in playControls)
             {
@@ -125,7 +130,7 @@ public class GameNetworkManager : NetworkManager
                 {
                     var infoToSend = g.GetComponent<PawnNetworkController>();
 
-                    ply.SetUpPawn_ClientRpc(infoToSend, !isBlueTeam ? 7 : 6, new ClientRpcParams()
+                    ply.SetUpPawn_ClientRpc(infoToSend, !isBlueTeam ? 7 : 6, !isBlueTeam ? spawnPos_TeamRed[i].position : spawnPos_TeamBlue[i].position, new ClientRpcParams()
                     {
                         Send = new ClientRpcSendParams()
                         {
@@ -148,17 +153,13 @@ public class GameNetworkManager : NetworkManager
                 }
             }
 
+            if (!isBlueTeam) spawnPos_TeamRed.RemoveAt(i);
+            else spawnPos_TeamBlue.RemoveAt(i);
+
             isBlueTeam = !isBlueTeam;
         }
 
         PrefabRefManager.Instance.serverVars.matchStarted.Value = true;
-    }
-
-    [ServerRpc]
-    public void GameEnd_Calculate_ServerRpc(ServerRpcParams rpcParams)
-    {
-        //if (rpcParams.Receive.SenderClientId != LocalClientId) return;
-
     }
 
 }
